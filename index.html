@@ -1,1 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PMO · Smart Dashboard — Moteur de santé &amp; Statistiques · CA Personal Finance &amp; Mobility</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#009597; --teal-dark:#007375; --teal-xlt:#E5F4F4;
+  --navy:#071621; --navy2:#0E2841;
+  --orange:#F26B43; --orange-lt:#FDF0EB;
+  --red:#ED1B2F; --red-lt:#FDEAEC;
+  --green:#196B24; --green-lt:#EBF4EC;
+  --amber:#E8A317; --purple:#A02B93;
+  --white:#fff; --bg:#F4F6F8; --bg3:#EEF2F5;
+  --border:#DDE3E9; --border2:#C5CFD8;
+  --text:#071621; --text2:#2D4A5E; --text3:#6B808F;
+  --font-head:'Open Sans','Aptos Display',Arial,sans-serif;
+  --font-body:'Open Sans',Arial,sans-serif;
+  /* computed health bands */
+  --h-ontrack:#009597; --h-risk:#E8A317; --h-critical:#ED1B2F;
+  --h-blocked:#A02B93; --h-done:#196B24; --h-planned:#6B808F;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{width:236px;flex-shrink:0;background:var(--navy);border-right:3px solid var(--teal);
+  display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1);background:var(--navy2)}
+.sb-tag{font-size:9px;letter-spacing:3px;color:var(--teal);text-transform:uppercase;font-weight:700;margin-bottom:6px}
+.sb-logo h2{font-family:var(--font-head);font-size:15px;font-weight:800;color:#fff;line-height:1.25}
+.sb-sub{font-size:10px;color:rgba(255,255,255,.45);margin-top:4px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-lbl{font-size:9px;letter-spacing:2.5px;color:rgba(255,255,255,.35);text-transform:uppercase;padding:14px 10px 6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:7px;cursor:pointer;
+  transition:all .16s;color:rgba(255,255,255,.6);font-size:12px;font-weight:600;border:1px solid transparent;margin-bottom:2px}
+.nav-item:hover{background:rgba(0,149,151,.15);color:#fff}
+.nav-item.active{background:rgba(0,149,151,.28);color:#fff;border-color:rgba(0,149,151,.5)}
+.nav-item .ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-ct{margin-left:auto;font-size:10px;font-weight:800;background:rgba(255,255,255,.1);padding:2px 8px;border-radius:20px;color:rgba(255,255,255,.6)}
+.nav-item.active .nav-ct{background:rgba(0,149,151,.45);color:#fff}
+.sb-foot{padding:14px;border-top:1px solid rgba(255,255,255,.1)}
+.exp-btn{width:100%;padding:10px;background:var(--teal);border:none;border-radius:7px;color:#fff;
+  font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;justify-content:center}
+.exp-btn:hover{background:var(--teal-dark)}
+.sb-meta{font-size:9.5px;color:rgba(255,255,255,.32);margin-top:10px;line-height:1.5}
+
+/* MAIN */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:2px solid var(--teal);padding:14px 26px;display:flex;align-items:center;
+  gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:40;box-shadow:0 2px 8px rgba(7,22,33,.07)}
+.topbar h1{font-family:var(--font-head);font-size:17px;font-weight:800;color:var(--navy)}
+.topbar .crumb{font-size:11px;color:var(--text3);margin-top:2px}
+.top-spacer{flex:1}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg select{font-family:var(--font-body);font-size:12px;padding:7px 11px;border:1.5px solid var(--border);
+  border-radius:7px;background:#fff;color:var(--text);cursor:pointer;font-weight:600}
+.seg select:focus{outline:none;border-color:var(--teal)}
+.content{padding:24px 26px 60px;max-width:1320px;width:100%}
+
+/* CARDS / GRID */
+.grid{display:grid;gap:16px}
+.g-kpi{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.g-2{grid-template-columns:1fr 1fr}
+.g-3{grid-template-columns:2fr 1fr}
+.panel{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(7,22,33,.04)}
+.panel h3{font-family:var(--font-head);font-size:13px;font-weight:800;color:var(--navy);margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.panel .sub{font-size:11px;color:var(--text3);margin-bottom:16px}
+.panel-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.panel-hd h3{margin-bottom:2px}
+
+/* KPI */
+.kpi{background:#fff;border:1px solid var(--border);border-left:4px solid var(--accent,var(--teal));
+  border-radius:11px;padding:16px 18px;box-shadow:0 1px 3px rgba(7,22,33,.04)}
+.kpi .v{font-family:var(--font-head);font-size:30px;font-weight:800;color:var(--navy);line-height:1}
+.kpi .l{font-size:11px;color:var(--text3);margin-top:6px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.kpi .d{font-size:10.5px;margin-top:7px;font-weight:700}
+.kpi .d.up{color:var(--green)} .kpi .d.dn{color:var(--red)} .kpi .d.fl{color:var(--text3)}
+
+/* GAUGE */
+.gauge-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.gauge-num{font-family:var(--font-head);font-size:46px;font-weight:800;line-height:1}
+.gauge-lbl{font-size:12px;color:var(--text3);font-weight:600;margin-top:4px}
+.legend{display:flex;flex-direction:column;gap:7px}
+.legend .row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text2);font-weight:600}
+.legend .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.legend .n{margin-left:auto;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+
+/* BARS */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:11.5px}
+.bar-row .nm{width:104px;flex-shrink:0;color:var(--text2);font-weight:600;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:18px;background:var(--bg3);border-radius:5px;overflow:hidden;display:flex}
+.bar-fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;color:#fff;font-size:9.5px;font-weight:800;min-width:2px}
+.bar-row .val{width:38px;text-align:right;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+
+/* HEATMAP */
+table.heat{border-collapse:separate;border-spacing:3px;width:100%}
+table.heat th{font-size:10px;color:var(--text3);font-weight:700;padding:4px;text-transform:uppercase;letter-spacing:.3px}
+table.heat td.rowh{font-size:11px;font-weight:700;color:var(--text2);text-align:right;padding-right:8px;white-space:nowrap}
+.cell{border-radius:6px;padding:9px 4px;text-align:center;color:#fff;font-weight:800;font-size:13px;position:relative}
+.cell small{display:block;font-size:8.5px;font-weight:600;opacity:.85;margin-top:1px}
+.cell.empty{background:var(--bg3);color:var(--text3)}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);
+  font-weight:800;padding:9px 10px;border-bottom:2px solid var(--border)}
+.tbl td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr.clk{cursor:pointer;transition:background .12s}
+.tbl tr.clk:hover{background:var(--teal-xlt)}
+.tbl .code{font-family:var(--font-head);font-weight:800;color:var(--teal-dark);font-size:11px}
+.mini-prog{width:64px;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:7px}
+.mini-prog i{display:block;height:100%}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.b-ontrack{background:var(--teal-xlt);color:var(--teal-dark)} .b-ontrack .dot{background:var(--teal)}
+.b-risk{background:#FCF3DD;color:#9A6B00} .b-risk .dot{background:var(--amber)}
+.b-critical{background:var(--red-lt);color:var(--red)} .b-critical .dot{background:var(--red)}
+.b-blocked{background:#F7E9F5;color:var(--purple)} .b-blocked .dot{background:var(--purple)}
+.b-done{background:var(--green-lt);color:var(--green)} .b-done .dot{background:var(--green)}
+.b-planned{background:var(--bg3);color:var(--text3)} .b-planned .dot{background:var(--text3)}
+.ent-badge{background:var(--navy);color:#fff;padding:3px 8px;border-radius:5px;font-size:10px;font-weight:700}
+.flag{display:inline-flex;align-items:center;gap:4px;background:var(--orange-lt);color:var(--orange);
+  border:1px solid #F9C9B6;padding:2px 7px;border-radius:5px;font-size:9.5px;font-weight:800;margin:1px}
+.tag{font-size:10px;color:var(--text3);font-weight:600}
+.diverge{font-size:10px;font-weight:800;padding:2px 6px;border-radius:4px}
+.diverge.worse{background:var(--red-lt);color:var(--red)}
+.diverge.better{background:var(--green-lt);color:var(--green)}
+.diverge.same{background:var(--bg3);color:var(--text3)}
+
+/* SIGNAL CHIPS */
+.sig{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin:1px;background:var(--bg3);color:var(--text2)}
+.sig.neg{background:var(--red-lt);color:var(--red)} .sig.pos{background:var(--green-lt);color:var(--green)}
+
+/* HEALTH BAR mini */
+.hp{display:inline-block;width:80px;height:8px;border-radius:5px;background:var(--bg3);overflow:hidden;vertical-align:middle;margin-right:8px}
+.hp i{display:block;height:100%}
+
+.section-title{font-family:var(--font-head);font-size:14px;font-weight:800;color:var(--navy);margin:8px 0 14px;display:flex;align-items:center;gap:9px}
+.section-title::before{content:"";width:4px;height:18px;background:var(--teal);border-radius:3px}
+.hidden{display:none}
+.muted{color:var(--text3)}
+.note{font-size:10.5px;color:var(--text3);line-height:1.6;margin-top:12px;padding:11px 13px;background:var(--bg);border-radius:8px;border-left:3px solid var(--border2)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(7,22,33,.55);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:760px;width:100%;box-shadow:0 20px 60px rgba(7,22,33,.3)}
+.modal-hd{padding:20px 24px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#fff;border-radius:14px 14px 0 0;z-index:2}
+.modal-hd .code{font-size:11px;color:var(--teal-dark);font-weight:800;letter-spacing:.5px}
+.modal-hd h2{font-family:var(--font-head);font-size:18px;font-weight:800;color:var(--navy);margin:3px 0 8px}
+.modal-x{position:absolute;top:18px;right:20px;cursor:pointer;font-size:20px;color:var(--text3);background:var(--bg3);
+  width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;border:none}
+.modal-x:hover{background:var(--red-lt);color:var(--red)}
+.modal-bd{padding:22px 24px}
+.mb-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.mb-box{background:var(--bg);border-radius:9px;padding:13px 15px}
+.mb-box .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);font-weight:800;margin-bottom:5px}
+.mb-box .v{font-size:13px;color:var(--text);font-weight:600;line-height:1.4}
+.mb-sec{margin-bottom:16px}
+.mb-sec h4{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);font-weight:800;margin-bottom:7px;display:flex;align-items:center;gap:7px}
+.mb-sec p{font-size:12.5px;color:var(--text2);line-height:1.55}
+.mb-li{font-size:12px;color:var(--text2);line-height:1.5;padding:6px 0 6px 18px;position:relative;border-bottom:1px solid var(--bg3)}
+.mb-li::before{content:"▸";position:absolute;left:2px;color:var(--teal)}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;
+  padding:12px 22px;border-radius:10px;font-size:12.5px;font-weight:700;z-index:200;opacity:0;transition:opacity .25s;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast.show{opacity:1}
+
+@media(max-width:980px){.g-2,.g-3{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-tag">PMO · Smart</div>
+    <h2>Dashboard CAAB — RMG</h2>
+    <div class="sb-sub">CA Personal Finance &amp; Mobility</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-lbl">Pilotage</div>
+    <div class="nav-item active" data-view="cockpit" onclick="go('cockpit',this)"><span class="ic">🛰️</span> Cockpit <span class="nav-ct" id="ct-cockpit"></span></div>
+    <div class="nav-item" data-view="sante" onclick="go('sante',this)"><span class="ic">🩺</span> Santé auto <span class="nav-ct" id="ct-sante"></span></div>
+    <div class="nav-item" data-view="stats" onclick="go('stats',this)"><span class="ic">📊</span> Statistiques</div>
+    <div class="nav-item" data-view="attention" onclick="go('attention',this)"><span class="ic">🔥</span> Attention <span class="nav-ct" id="ct-attention"></span></div>
+    <div class="nav-item" data-view="qualite" onclick="go('qualite',this)"><span class="ic">⚠️</span> Qualité données <span class="nav-ct" id="ct-qualite"></span></div>
+    <div class="nav-lbl">Données</div>
+    <div class="nav-item" data-view="projets" onclick="go('projets',this)"><span class="ic">📋</span> Tous les projets <span class="nav-ct" id="ct-projets"></span></div>
+  </nav>
+  <div class="sb-foot">
+    <button class="exp-btn" onclick="exportCSV()">⬇️ Export CSV (santé)</button>
+    <div class="sb-meta" id="sb-meta">Moteur de santé v1<br>—</div>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1 id="tb-title">Cockpit portefeuille</h1>
+      <div class="crumb" id="tb-crumb">Vue consolidée · 47 projets</div>
+    </div>
+    <div class="top-spacer"></div>
+    <div class="seg">
+      <select id="f-entite" onchange="applyFilter()"></select>
+      <select id="f-type" onchange="applyFilter()"></select>
+      <select id="f-health" onchange="applyFilter()">
+        <option value="">Toute santé (auto)</option>
+        <option value="critical">🔴 Critique</option>
+        <option value="blocked">🟣 Bloqué</option>
+        <option value="risk">🟡 À risque</option>
+        <option value="ontrack">🟢 On track</option>
+        <option value="done">✅ Terminé</option>
+        <option value="planned">⚪ Non démarré</option>
+      </select>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  DATA  (extrait du PMO Dashboard d'origine — 47 projets)
+// ════════════════════════════════════════════════════════
+var PROJECTS = /*__DATA__*/[{"categorie":"direct","id":1,"code":"1.2","name":"Rollout IRB","entite":"AGOS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":2,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"AGOS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"critical","progressColor":"#F44336","tendance":"⚠ Bloqué","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"L'entité n'est pas en capacité de réaliser les évolutions prévues dans le cadre du projet CORTEX.  | L'entité étant en pleine migration de sa base de données durant cette même période.","scoring":"Orange","comitologie":"","impacts":[],"blockers":["L'entité n'est pas en capacité de réaliser les évolutions prévues dans le cadre du projet CORTEX.","L'entité étant en pleine migration de sa base de données durant cette même période."],"decisions":[]},{"categorie":"direct","id":3,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"AGOS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":4,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"AGOS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":5,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"AGOS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":6,"code":"2.3","name":"Forbearance et PAP","entite":"AGOS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":7,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"AGOS","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"L’extension du scope du flux pour inclure les contrats clôturés sans achat du véhicule\nL’ajout de nouvelles données requises pour le monitoring VR et le modèle interne (28 nouveaux champs)\nLa mise en production du flux enrichi pour les entités de Phase 1 (CAAB, Sofinco, Credibom, Creditplus, Agos, Sofinco Spain) d’ici fin 2026 ET phase 2 (entité de location opérationnelle) quand on aura plus de visibilité sur la production des flux réglementaires détaillés\n","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":8,"code":"1.2","name":"Rollout IRB","entite":"CREDITPLUS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":9,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"CREDITPLUS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente)","scoring":"Orange","comitologie":"Réunion d'échange spécifique à CORTEX toutes les deux semaines |  | Mise en place d'ateliers selon les besoins des entités","impacts":[],"blockers":["Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente)"],"decisions":["Réunion d'échange spécifique à CORTEX toutes les deux semaines","Mise en place d'ateliers selon les besoins des entités"]},{"categorie":"direct","id":10,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"CREDITPLUS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":11,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"CREDITPLUS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":12,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"CREDITPLUS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":13,"code":"2.3","name":"Forbearance et PAP","entite":"CREDITPLUS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":14,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"CREDITPLUS","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Porté par la ligne métier VR","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":15,"code":"1.2","name":"Rollout IRB","entite":"BuFRANCE","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":16,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"BuFRANCE","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (nous attendons la confirmation ou non de la BU)","scoring":"Orange","comitologie":"Réunion d'échange spécifique à CORTEX toutes les deux semaines |  | Mise en place d'ateliers selon les besoins des entités","impacts":[],"blockers":["Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (nous attendons la confirmation ou non de la BU)"],"decisions":["Réunion d'échange spécifique à CORTEX toutes les deux semaines","Mise en place d'ateliers selon les besoins des entités"]},{"categorie":"direct","id":17,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"BuFRANCE","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":18,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"BuFRANCE","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":19,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"BuFRANCE","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":20,"code":"2.3","name":"Forbearance et PAP","entite":"BuFRANCE","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":21,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"BuFRANCE","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":22,"code":"1.1","name":"Bâle IV","entite":"LEASYS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":35,"status":"critical","progressColor":"#F44336","tendance":"↘ Dégradation","nextMilestone":"","dateInitiale":"","dateRevisee":"","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement des flux CRR détaillés de l’entité Drivalia – Maille granulaire contrat | Bénéfices/Impacts à monitorer :  |  • Calculs prudentiels plus fins pour optimisation des RWA |  • Suivis détaillés des engagements au niveau Contrat |  • Renforcement de la transparence et de la maitrise des risques par une identification plus précises des expositions","faits":"","diagnostic":"","scoring":"Rouge","comitologie":"","impacts":[],"blockers":[],"decisions":[]},{"categorie":"direct","id":23,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"LEASYS","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"warning","progressColor":"#FF9800","tendance":"↘ Dégradation","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"Faisabilité toujours en étude (notices communiquées) . |  | D'autres travaux sont en adhérence avec le projet CORTEX ce qui impacte également l'entité CA Mobility qui se source du même système","scoring":"Orange","comitologie":"","impacts":[],"blockers":["Faisabilité toujours en étude (notices communiquées) .","D'autres travaux sont en adhérence avec le projet CORTEX ce qui impacte également l'entité CA Mobility qui se source du même système"],"decisions":[]},{"categorie":"direct","id":24,"code":"2.3","name":"Forbearance et PAP","entite":"LEASYS","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":25,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"LEASYS","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":26,"code":"1.2","name":"Rollout IRB","entite":"SOF_SPAIN","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":27,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"SOF_SPAIN","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"","scoring":"Orange","comitologie":"Réunion d'échange spécifique à CORTEX toutes les deux semaines","impacts":[],"blockers":[],"decisions":["Réunion d'échange spécifique à CORTEX toutes les deux semaines"]},{"categorie":"direct","id":28,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"SOF_SPAIN","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":29,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"SOF_SPAIN","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":30,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"SOF_SPAIN","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":31,"code":"2.3","name":"Forbearance et PAP","entite":"SOF_SPAIN","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":32,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"SOF_SPAIN","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":33,"code":"1.2","name":"Rollout IRB","entite":"CREDITBOM","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":34,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"CREDITBOM","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente) |  | BU en cours d'analyse des nouvelles notices avec des échanges fréquents avec le CC. L'entité est mobilisée sur le sujet","scoring":"Orange","comitologie":"Réunion d'échange spécifique à CORTEX toutes les deux semaines |  | Mise en place d'ateliers selon les besoins des entités","impacts":[],"blockers":["Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente)","BU en cours d'analyse des nouvelles notices avec des échanges fréquents avec le CC. L'entité est mobilisée sur le sujet"],"decisions":["Réunion d'échange spécifique à CORTEX toutes les deux semaines","Mise en place d'ateliers selon les besoins des entités"]},{"categorie":"direct","id":35,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"CREDITBOM","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":36,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"CREDITBOM","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":37,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"CREDITBOM","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":38,"code":"2.3","name":"Forbearance et PAP","entite":"CREDITBOM","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":39,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"CREDITBOM","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]},{"categorie":"direct","id":40,"code":"1.1","name":"CRR Drivalia","entite":"CAAB","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":35,"status":"critical","progressColor":"#F44336","tendance":"→ Stable","nextMilestone":"Certification des flux Risques planifié au : 30.04.26 | Recette Fonctionnelle de bout en bout( moteu","dateInitiale":"30/04/2025","dateRevisee":"30/08/2026","retard":"~4 mois","delayReason":"Point d'attention – risque identifié","description":"Lancement des flux CRR détaillés de l’entité Drivalia – Maille granulaire contrat | Bénéfices/Impacts à monitorer :  |  • Calculs prudentiels plus fins pour optimisation des RWA |  • Suivis détaillés des engagements au niveau Contrat |  • Renforcement de la transparence et de la maitrise des risques par une identification plus précises des expositions","faits":"Adhérence ESG, VR, PALMA. | Périmètre août : DK, FR, BE, NL, NO. | Autres marchés au fil de l'eau | First Time Right < 50 % acceptés sans “rework majeur” | 2nd Itération en cours de recette","diagnostic":"Adhérence forte avec les équipes finance en locales et au niveau CC -  | Risque planning avéré : Environnement test ARPEGE attendu en mai (sous réserve dispo ressources FIG + validation CASA).","scoring":"Rouge","comitologie":"Recette flux retail/Corporate en cours.","impacts":["Adhérence ESG, VR, PALMA.","Périmètre août : DK, FR, BE, NL, NO.","Autres marchés au fil de l'eau","First Time Right < 50 % acceptés sans “rework majeur”"],"blockers":["Adhérence forte avec les équipes finance en locales et au niveau CC -","Risque planning avéré : Environnement test ARPEGE attendu en mai (sous réserve dispo ressources FIG + validation CASA)."],"decisions":["Recette flux retail/Corporate en cours."]},{"categorie":"direct","id":41,"code":"1.2","name":"Rollout IRB","entite":"CAAB","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"Projet non initié. Cible : dossier IRB BCE Q3/2029, MEP 2030. IFRS9 doit intégrer contraintes IRB by","dateInitiale":"30/09/2029","dateRevisee":"30/09/2029","retard":"0 jours","delayReason":"Aucun retard","description":"Passage IRB Foundation (Corporate) et Avancée (Retail) pour RWAs","faits":"N/A. Prérequis : stabilisation modèles IFRS9 en priorité","diagnostic":"","scoring":"Gris","comitologie":"Communication amont correcte (cadrage stratégique partagé).","impacts":["N/A. Prérequis : stabilisation modèles IFRS9 en priorité"],"blockers":[],"decisions":["Communication amont correcte (cadrage stratégique partagé)."]},{"categorie":"direct","id":42,"code":"1.3","name":"CORTEX – Upgrade flux risques","entite":"CAAB","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"Phase d’homologation : 11.2026 à 05.2027 | Mise en Production : Arrêté mai 2027  | Date d’arrêté hom","dateInitiale":"30/11/2026","dateRevisee":"30/11/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Lancement de la Campagne Homologation « FLUX PACT V4.5 » : Collecte de données Risques/Finances mailles granulaires en norme IFRS | Objectif : Coordination et certification de l’update des flux PACT CRR. | Usages impactés : Liquidité et Résolution (MREL), les besoins ALM représentés par PALMA, SRB Valuation, ainsi que les reportings Risques (Calculs prudentiels -Bâle IV, Anacrédit, CORFOU)","faits":"","diagnostic":"Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente) |  | La capacité d'allouer des ressouces sur l'analyse des est limitées par l'entité.","scoring":"Orange","comitologie":"Réunion d'échange spécifique à CORTEX toutes les deux semaines |  | Mise en place d'ateliers et d'échanges téléphoniques intermédiaires afin d'anticiper certains blocage","impacts":[],"blockers":["Passage du CRR adapté de la maille PCCO à la maille contrat compliqué à réaliser par l'entité dans le délai prévu (un mail de confirmation est attente)","La capacité d'allouer des ressouces sur l'analyse des est limitées par l'entité."],"decisions":["Réunion d'échange spécifique à CORTEX toutes les deux semaines","Mise en place d'ateliers et d'échanges téléphoniques intermédiaires afin d'anticiper certains blocage"]},{"categorie":"direct","id":43,"code":"1.4","name":"Remédiation qualité BCBS239","entite":"CAAB","type":"Risque Prudentiel","scope":"Prudentiel / Capital","progress":100,"status":"done","progressColor":"#196B24","tendance":"↘ Dégradation","nextMilestone":"195 anomalies à fév 2026. Solutions tactiques. Retards récurrents.","dateInitiale":"31/12/2026","dateRevisee":"31/12/2026","retard":"Retards récurrents","delayReason":"Alerte critique – action corrective urgente","description":"Remédiation qualité données en contribution au groupe CA","faits":"Approche tactique vs industrielle. Pas de vision structurante.","diagnostic":"","scoring":"Rouge","comitologie":"Communication réactive. Manque transparence causes racines.","impacts":["Approche tactique vs industrielle. Pas de vision structurante."],"blockers":[],"decisions":["Communication réactive. Manque transparence causes racines."]},{"categorie":"direct","id":44,"code":"2.1","name":"Remédiation IFRS9 Corporate","entite":"CAAB","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"CCF livré mais qualité insuffisante. LGD développé par KPMG. Réalignement CCF/LGD en cours.","dateInitiale":"30/06/2026","dateRevisee":"Réalignement CCF/LGD","retard":"À déterminer","delayReason":"Point d'attention – risque identifié","description":"Modèles Corporate cible Casa + remédiation recos OSI Auto 2023","faits":"Modèles dev en externe → risque maintenabilité.","diagnostic":"","scoring":"Orange","comitologie":"Communication correcte mais manque visibilité post-dev.","impacts":["Modèles dev en externe → risque maintenabilité."],"blockers":[],"decisions":["Communication correcte mais manque visibilité post-dev."]},{"categorie":"direct","id":45,"code":"2.2","name":"Remédiation IFRS9 Retail","entite":"CAAB","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":55,"status":"ok","progressColor":"#4CAF50","tendance":"↗ Amélioration","nextMilestone":"Modèles développés par EY depuis Fév 2026. 2 mois retard initial, rattrapage en cours.","dateInitiale":"31/03/2027","dateRevisee":"~2 mois retard initial","retard":"2 mois","delayReason":"Non applicable / non évaluable","description":"Modèles Retail cible Groupe + remédiation OSI Sofinco 2024 & reco IGL | Bénéfices/Impacts à monitorer : | • Alignement méthodologique IFRS9-  | • Meilleure comparabilité des provisions | • Renforcement du pilotage du risque crédit.","faits":"","diagnostic":"Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…","scoring":"Orange","comitologie":"Communication structurée. Formaliser transition post-EY.","impacts":[],"blockers":["Mise en place de compétence interne, préparation de la maintenance de ces modèles, les calibrages, études ad'hoc, remédiation…"],"decisions":["Communication structurée. Formaliser transition post-EY."]},{"categorie":"direct","id":46,"code":"2.3","name":"Forbearance et PAP","entite":"CAAB","type":"Risque Crédit","scope":"Provisions / Risques de crédit","progress":100,"status":"done","progressColor":"#196B24","tendance":"— N/A","nextMilestone":"[Forbearance & PAP]: moteurs activés 01/01/2026.","dateInitiale":"01/01/2026","dateRevisee":"01/01/2026","retard":"0 jours","delayReason":"Aucun retard","description":"Mission BCE OSI IFRS9 & Deep dive forbearance    | Application des nouvelles règles liées à la forbearance et au processus d'alerte précoce  |  | Bénéfices/Impacts à monitorer :   |  • Gestion des entrées /sorties stage en provisionnement IFRS 9  , Etat FINREP  |  • Pilotage WL - motifs détaillés d'entrée en Watch List retranscris par l'entité RUN dans Agora","faits":"[Forbearance] : Qualité des données à améliorer.  | [PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel |  | Points ouverts:  | Amélioration continue de la qualité des données. | Implémentation du nouveau plan de contrôle : 1ère déclaration 30/06; | Reporting interne : Déploiement progressif des KPI  cible :  [S2 26]","diagnostic":"Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026. |  | Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)","scoring":"Rouge","comitologie":"Engagement CAAB sur prise en compte de la recommendation CAPFM PDR","impacts":["[Forbearance] : Qualité des données à améliorer.","[PAP][WatchList][Retail] : Reporting Manuel à destination de CRG sous format excel","Points ouverts:","Amélioration continue de la qualité des données."],"blockers":["Reco CAPFM : [Risque Op] Passage en  alimentation automatiques des flux Risques retail dès l'arrété d'avril 2026.","Mission BCE prévue au Q3 au niveau du GCA (avec focus potentiel sur CAPFM et sur CAAB)"],"decisions":["Engagement CAAB sur prise en compte de la recommendation CAPFM PDR"]},{"categorie":"direct","id":47,"code":"3.1","name":"ESG - Valeurs Résiduelles","entite":"CAAB","type":"ESG / Durabilité","scope":"Performance durable et Responsable / Valeurs Résiduelles","progress":50,"status":"ok","progressColor":"#4CAF50","tendance":"→ Stable","nextMilestone":"","dateInitiale":"TBD","dateRevisee":"TBD","retard":"0 jours","delayReason":"Aucun retard","description":"Contribution aux indicateurs ESG ( GAR, NET0,..) et à la  Cartographie / data lineage des donénes VR","faits":"Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR. | Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa.","diagnostic":"Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR","scoring":"","comitologie":"Kick-off VR positionné le 29/04 .","impacts":["Souhait d'une convergence d'un référentiel unique de données entre les lignes métiers Risque et VR.","Dépendances flux CRR détaillés pour production flux ESG - Appareillage des flux CRR et ESG exigés par CAsa."],"blockers":["Identification de gaps entre les données les métiers transmises par les métiers ESG en local et les données risques remontées . Interlocuteurs Risques CAAB et metier CAAB VR sont différents - apréciations a dire d'expert par le metier VR"],"decisions":["Kick-off VR positionné le 29/04 ."]}]/*__END__*/;
+var TODAY = new Date(2026,5,16); // 16 juin 2026 (mois 0-indexé)
+
+// ════════════════════════════════════════════════════════
+//  MOTEUR DE SANTÉ  (auto-détection transparente & explicable)
+// ════════════════════════════════════════════════════════
+var BANDS = {
+  ontrack:{lbl:"On track", cls:"b-ontrack", col:"var(--h-ontrack)", rank:5, ic:"🟢"},
+  risk:   {lbl:"À risque", cls:"b-risk",    col:"var(--h-risk)",    rank:3, ic:"🟡"},
+  critical:{lbl:"Critique",cls:"b-critical",col:"var(--h-critical)",rank:1, ic:"🔴"},
+  blocked:{lbl:"Bloqué",   cls:"b-blocked", col:"var(--h-blocked)", rank:2, ic:"🟣"},
+  done:   {lbl:"Terminé",  cls:"b-done",    col:"var(--h-done)",    rank:6, ic:"✅"},
+  planned:{lbl:"Non démarré",cls:"b-planned",col:"var(--h-planned)",rank:4, ic:"⚪"}
+};
+var DECLARED = {ok:"ontrack", warning:"risk", critical:"critical", done:"done"};
+var NOT_STARTED_RE = /non initi|non lanc|pas (été )?lanc|projet non|à initier|prérequis|non démarr/i;
+// Marqueurs « forts » : travail réellement pas commencé — priment même sur un % saisi à tort
+var STRONG_NS_RE = /non initi|non lanc|pas (été )?lanc|projet non lanc|à initier|non démarr/i;
+
+function parseDate(s){ var m=/(\d{2})\/(\d{2})\/(\d{4})/.exec(s||""); return m?new Date(+m[3],+m[2]-1,+m[1]):null; }
+function monthsBetween(a,b){ return (b.getFullYear()-a.getFullYear())*12 + (b.getMonth()-a.getMonth()) + (b.getDate()-a.getDate())/30; }
+
+// Returns {score, status, signals:[{t,w,sign}], flags:[...], overdueM}
+function health(p){
+  var score=78, sig=[], flags=[];
+  var blob=[p.faits,p.nextMilestone,p.description,p.diagnostic].join(" ");
+  var notStarted = (p.progress<=5) || STRONG_NS_RE.test(blob);
+
+  // 1 — Tendance (trend momentum)
+  var t=p.tendance||"";
+  if(/Bloqué/i.test(t)){score-=22; sig.push({t:"Tendance bloquée",w:-22,sign:"neg"});}
+  else if(/Dégrad/i.test(t)){score-=15; sig.push({t:"Tendance en dégradation",w:-15,sign:"neg"});}
+  else if(/Amélior/i.test(t)){score+=9; sig.push({t:"Tendance en amélioration",w:9,sign:"pos"});}
+  else if(/Stable/i.test(t)){score+=2; sig.push({t:"Tendance stable",w:2,sign:"pos"});}
+
+  // 2 — Score RAG déclaré
+  if(p.scoring==="Rouge"){score-=20; sig.push({t:"Scoring Rouge",w:-20,sign:"neg"});}
+  else if(p.scoring==="Orange"){score-=10; sig.push({t:"Scoring Orange",w:-10,sign:"neg"});}
+
+  // 3 — Retard (texte libre)
+  var r=(p.retard||"").toLowerCase();
+  if(/récurrent/.test(r)){score-=24; sig.push({t:"Retards récurrents",w:-24,sign:"neg"});}
+  else if(/(4|5|6|7|8|9|1\d)\s*mois|an\b/.test(r)){score-=18; sig.push({t:"Retard ≥4 mois",w:-18,sign:"neg"});}
+  else if(/mois/.test(r)){score-=11; sig.push({t:"Retard de quelques mois",w:-11,sign:"neg"});}
+  else if(/déterminer/.test(r)){score-=8; flags.push("Retard indéterminé"); sig.push({t:"Retard à déterminer",w:-8,sign:"neg"});}
+
+  // 4 — Bloqueurs
+  var nb=(p.blockers||[]).length;
+  if(nb){var d=Math.min(26,nb*13); score-=d; sig.push({t:nb+" bloqueur"+(nb>1?"s":""),w:-d,sign:"neg"});}
+
+  // 5 — Échéance dépassée (dateInitiale passée & non terminé)
+  var di=parseDate(p.dateInitiale), overdueM=0;
+  if(di && p.progress<100){
+    var dm=monthsBetween(di,TODAY);
+    if(dm>0){ overdueM=dm; var pen=Math.min(20,Math.round(dm*4)); score-=pen;
+      sig.push({t:"Échéance dépassée de "+dm.toFixed(0)+" mois",w:-pen,sign:"neg"}); }
+  }
+
+  // 6 — Statut déclaré (signal complémentaire, pondéré faible)
+  if(p.status==="critical"){score-=10; sig.push({t:"Statut déclaré critique",w:-10,sign:"neg"});}
+  else if(p.status==="warning"){score-=5; sig.push({t:"Statut déclaré attention",w:-5,sign:"neg"});}
+
+  // 7 — Progression brute
+  if(p.progress>=100 && !notStarted){score+=12; sig.push({t:"Progression 100%",w:12,sign:"pos"});}
+  else if(p.progress>=70){score+=5; sig.push({t:"Progression élevée",w:5,sign:"pos"});}
+
+  score=Math.max(0,Math.min(100,Math.round(score)));
+
+  // ── Bande de santé (décision) ──
+  var status;
+  if(notStarted) status="planned";
+  else if(/Bloqué/i.test(t) || (nb>=2 && p.progress<70 && score<58)) status="blocked";
+  else if(p.progress>=100 && score>=62) status="done";
+  else if(score<46) status="critical";
+  else if(score<68) status="risk";
+  else status="ontrack";
+
+  // ── Drapeaux qualité de données (contradictions) ──
+  if(p.progress>=100 && NOT_STARTED_RE.test(blob)) flags.push("100 % mais « non initié »");
+  if(p.progress>=100 && (p.scoring==="Rouge"||p.scoring==="Orange")) flags.push("100 % mais scoring "+p.scoring);
+  if(p.status==="done" && /Dégrad/i.test(t)) flags.push("« Terminé » mais en dégradation");
+  var dr=p.dateRevisee||""; if(dr && !/^\d{2}\/\d{2}\/\d{4}/.test(dr)) flags.push("Date révisée non valide");
+  if(p.progress>=100 && nb>0) flags.push("100 % mais bloqueurs ouverts");
+
+  // ── Priorité d'attention ──
+  var priority = (100-score) + nb*6 + (overdueM>0?12:0) + (p.type==="Risque Prudentiel"?5:0) + (status==="blocked"?10:0);
+  if(status==="done"||status==="planned") priority=Math.max(0,priority-40);
+
+  return {score:score, status:status, signals:sig, flags:flags, overdueM:Math.round(overdueM), priority:Math.round(priority), notStarted:notStarted, blockers:nb};
+}
+
+// enrich
+PROJECTS.forEach(function(p){ p._h=health(p); });
+
+// ════════════════════════════════════════════════════════
+//  STATE + FILTERS
+// ════════════════════════════════════════════════════════
+var VIEW="cockpit", F={entite:"",type:"",health:""};
+function filtered(){
+  return PROJECTS.filter(function(p){
+    if(F.entite && p.entite!==F.entite) return false;
+    if(F.type && p.type!==F.type) return false;
+    if(F.health && p._h.status!==F.health) return false;
+    return true;
+  });
+}
+function h(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+function uniq(a){return a.filter(function(v,i){return a.indexOf(v)===i;});}
+
+function buildFilters(){
+  var ents=uniq(PROJECTS.map(function(p){return p.entite;})).sort();
+  var types=uniq(PROJECTS.map(function(p){return p.type;})).sort();
+  document.getElementById("f-entite").innerHTML='<option value="">Toutes entités</option>'+ents.map(function(e){return '<option>'+h(e)+'</option>';}).join("");
+  document.getElementById("f-type").innerHTML='<option value="">Tous risques</option>'+types.map(function(e){return '<option>'+h(e)+'</option>';}).join("");
+}
+function applyFilter(){
+  F.entite=document.getElementById("f-entite").value;
+  F.type=document.getElementById("f-type").value;
+  F.health=document.getElementById("f-health").value;
+  render();
+}
+
+// ════════════════════════════════════════════════════════
+//  SVG CHART HELPERS  (zéro dépendance)
+// ════════════════════════════════════════════════════════
+function donut(segs,size,thick,centerHTML){
+  size=size||168; thick=thick||26; var r=(size-thick)/2, cx=size/2, cy=size/2, C=2*Math.PI*r;
+  var tot=segs.reduce(function(s,x){return s+x.v;},0)||1, off=0, arcs="";
+  segs.forEach(function(s){
+    var frac=s.v/tot, len=frac*C;
+    arcs+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+s.c+'" stroke-width="'+thick+'" '+
+      'stroke-dasharray="'+len+' '+(C-len)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 '+cx+' '+cy+')"></circle>';
+    off+=len;
+  });
+  return '<div style="position:relative;width:'+size+'px;height:'+size+'px;flex-shrink:0">'+
+    '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="var(--bg3)" stroke-width="'+thick+'"></circle>'+arcs+'</svg>'+
+    (centerHTML?'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">'+centerHTML+'</div>':'')+'</div>';
+}
+function gauge(val,size){
+  size=size||200; var r=80, cx=size/2, cy=size/2+18, C=Math.PI*r;
+  var col=val>=68?"var(--h-ontrack)":val>=46?"var(--h-risk)":"var(--h-critical)";
+  var len=(val/100)*C;
+  return '<svg width="'+size+'" height="'+(size*0.66)+'" viewBox="0 0 '+size+' '+(size*0.66)+'">'+
+    '<path d="M '+(cx-r)+' '+cy+' A '+r+' '+r+' 0 0 1 '+(cx+r)+' '+cy+'" fill="none" stroke="var(--bg3)" stroke-width="20" stroke-linecap="round"/>'+
+    '<path d="M '+(cx-r)+' '+cy+' A '+r+' '+r+' 0 0 1 '+(cx+r)+' '+cy+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-linecap="round" stroke-dasharray="'+len+' '+C+'"/>'+
+    '<text x="'+cx+'" y="'+(cy-8)+'" text-anchor="middle" font-size="38" font-weight="800" fill="'+col+'" font-family="var(--font-head)">'+val+'</text>'+
+    '<text x="'+cx+'" y="'+(cy+14)+'" text-anchor="middle" font-size="11" fill="var(--text3)" font-weight="700">/ 100 santé</text>'+
+    '</svg>';
+}
+function hbars(rows,opt){ // rows:[{nm,v,c,extra}]
+  opt=opt||{}; var max=opt.max||Math.max.apply(null,rows.map(function(r){return r.v;}))||1;
+  return rows.map(function(r){
+    var pct=Math.max(2,(r.v/max)*100);
+    return '<div class="bar-row"><div class="nm" title="'+h(r.nm)+'">'+h(r.nm)+'</div>'+
+      '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:'+(r.c||'var(--teal)')+'">'+(r.inlabel||"")+'</div></div>'+
+      '<div class="val">'+(opt.fmt?opt.fmt(r.v):r.v)+'</div></div>';
+  }).join("");
+}
+function stackBar(segs,h_){ // segs:[{v,c}]
+  h_=h_||16; var tot=segs.reduce(function(s,x){return s+x.v;},0)||1;
+  return '<div style="display:flex;height:'+h_+'px;border-radius:5px;overflow:hidden;background:var(--bg3)">'+
+    segs.map(function(s){return s.v?'<div title="'+h(s.t||'')+': '+s.v+'" style="width:'+(s.v/tot*100)+'%;background:'+s.c+'"></div>':'';}).join("")+'</div>';
+}
+
+// ════════════════════════════════════════════════════════
+//  AGGREGATIONS
+// ════════════════════════════════════════════════════════
+function bandCounts(list){
+  var c={ontrack:0,risk:0,critical:0,blocked:0,done:0,planned:0};
+  list.forEach(function(p){c[p._h.status]++;}); return c;
+}
+function avg(arr){return arr.length?arr.reduce(function(s,x){return s+x;},0)/arr.length:0;}
+
+// ════════════════════════════════════════════════════════
+//  BADGES / SMALL RENDERERS
+// ════════════════════════════════════════════════════════
+function bandBadge(st){var b=BANDS[st];return '<span class="badge '+b.cls+'"><span class="dot"></span>'+b.lbl+'</span>';}
+function healthBar(score){
+  var col=score>=68?"var(--h-ontrack)":score>=46?"var(--h-risk)":"var(--h-critical)";
+  return '<span class="hp"><i style="width:'+score+'%;background:'+col+'"></i></span><b style="font-variant-numeric:tabular-nums">'+score+'</b>';
+}
+function divergeTag(p){
+  var decl=DECLARED[p.status]||"risk", comp=p._h.status;
+  if(decl===comp) return '<span class="diverge same">=</span>';
+  var worse=BANDS[comp].rank<BANDS[decl].rank;
+  return '<span class="diverge '+(worse?"worse":"better")+'" title="Déclaré: '+BANDS[decl].lbl+' → Auto: '+BANDS[comp].lbl+'">'+(worse?"▼ ":"▲ ")+BANDS[comp].lbl+'</span>';
+}
+
+// ════════════════════════════════════════════════════════
+//  VIEWS
+// ════════════════════════════════════════════════════════
+function render(){
+  var list=filtered();
+  document.getElementById("tb-crumb").textContent =
+    (F.entite||"Toutes entités")+" · "+(F.type||"Tous risques")+" · "+list.length+" projet"+(list.length>1?"s":"");
+  var V={cockpit:viewCockpit,sante:viewSante,stats:viewStats,attention:viewAttention,qualite:viewQualite,projets:viewProjets};
+  var titles={cockpit:"Cockpit portefeuille",sante:"Santé auto-détectée",stats:"Statistiques avancées",attention:"Projets sous tension",qualite:"Qualité des données",projets:"Tous les projets"};
+  document.getElementById("tb-title").textContent=titles[VIEW];
+  document.getElementById("content").innerHTML=V[VIEW](list);
+}
+
+// ---- COCKPIT ----
+function viewCockpit(list){
+  var c=bandCounts(list), portHealth=Math.round(avg(list.map(function(p){return p._h.score;})));
+  var active=list.filter(function(p){return p._h.status!=="done"&&p._h.status!=="planned";});
+  var flagged=list.filter(function(p){return p._h.flags.length;}).length;
+  var blocked=c.blocked, crit=c.critical;
+  var avgProg=Math.round(avg(list.map(function(p){return p.progress;})));
+  var diverg=list.filter(function(p){return (DECLARED[p.status]||"risk")!==p._h.status;}).length;
+
+  var segs=[
+    {v:c.ontrack,c:"var(--h-ontrack)",t:"On track"},{v:c.risk,c:"var(--h-risk)",t:"À risque"},
+    {v:c.critical,c:"var(--h-critical)",t:"Critique"},{v:c.blocked,c:"var(--h-blocked)",t:"Bloqué"},
+    {v:c.done,c:"var(--h-done)",t:"Terminé"},{v:c.planned,c:"var(--h-planned)",t:"Non démarré"}
+  ];
+  var legend=segs.map(function(s){return '<div class="row"><span class="sw" style="background:'+s.c+'"></span>'+s.t+'<span class="n">'+s.v+'</span></div>';}).join("");
+
+  var kpis=[
+    {v:portHealth,l:"Santé portefeuille",a:"var(--teal)",d:(portHealth>=68?"up":portHealth>=46?"fl":"dn"),dt:(portHealth>=68?"▲ Sain":portHealth>=46?"● Vigilance":"▼ Tendu")},
+    {v:active.length,l:"Projets actifs",a:"var(--navy)",d:"fl",dt:list.length+" au total"},
+    {v:crit+blocked,l:"Critiques + bloqués",a:"var(--red)",d:(crit+blocked?"dn":"up"),dt:crit+" crit · "+blocked+" bloqués"},
+    {v:diverg,l:"Écarts déclaré/auto",a:"var(--orange)",d:(diverg?"dn":"up"),dt:"statut recalculé"},
+    {v:flagged,l:"Anomalies données",a:"var(--purple)",d:(flagged?"dn":"up"),dt:"à corriger"},
+    {v:avgProg+"%",l:"Avancement moyen",a:"var(--green)",d:"fl",dt:"toutes phases"}
+  ];
+  var kpiHTML=kpis.map(function(k){return '<div class="kpi" style="--accent:'+k.a+'"><div class="v">'+k.v+'</div><div class="l">'+k.l+'</div><div class="d '+k.d+'">'+k.dt+'</div></div>';}).join("");
+
+  // top attention (5)
+  var top=list.filter(function(p){return p._h.status!=="done"&&p._h.status!=="planned";})
+    .sort(function(a,b){return b._h.priority-a._h.priority;}).slice(0,6);
+  var topHTML=top.length?top.map(function(p){
+    return '<tr class="clk" onclick="openModal('+p.id+')"><td><span class="code">'+h(p.code)+'</span></td>'+
+      '<td><strong>'+h(p.name)+'</strong><div class="tag">'+h(p.entite)+' · '+h(p.type)+'</div></td>'+
+      '<td>'+bandBadge(p._h.status)+'</td>'+
+      '<td>'+healthBar(p._h.score)+'</td>'+
+      '<td style="text-align:right"><b style="color:var(--red);font-variant-numeric:tabular-nums">'+p._h.priority+'</b></td></tr>';
+  }).join(""):'<tr><td colspan="5" class="muted" style="text-align:center;padding:20px">Aucun projet sous tension 🎉</td></tr>';
+
+  // entity health bars
+  var byEnt=entityHealth(list);
+
+  return '<div class="grid g-kpi" style="margin-bottom:16px">'+kpiHTML+'</div>'+
+    '<div class="grid g-3" style="margin-bottom:16px">'+
+      '<div class="panel"><div class="panel-hd"><div><h3>🔥 Priorité d\'action — top 6</h3><div class="sub">Score de priorité = (100−santé) + bloqueurs + retard + criticité prudentielle</div></div></div>'+
+        '<table class="tbl"><thead><tr><th>Code</th><th>Projet</th><th>Santé auto</th><th>Indice</th><th style="text-align:right">Prio.</th></tr></thead><tbody>'+topHTML+'</tbody></table></div>'+
+      '<div class="panel"><h3>🩺 Répartition santé</h3><div class="sub">Statut recalculé automatiquement</div>'+
+        '<div class="gauge-wrap" style="justify-content:center;margin-bottom:8px">'+donut(segs,150,24,'<div class="gauge-num" style="font-size:30px;color:var(--navy)">'+list.length+'</div><div class="gauge-lbl">projets</div>')+'</div>'+
+        '<div class="legend">'+legend+'</div></div>'+
+    '</div>'+
+    '<div class="panel"><div class="panel-hd"><div><h3>🏢 Santé par entité</h3><div class="sub">Santé moyenne (auto) et mix de statuts</div></div></div>'+byEnt+'</div>';
+}
+
+function entityHealth(list){
+  var ents=uniq(list.map(function(p){return p.entite;})).sort();
+  var rows=ents.map(function(e){
+    var ps=list.filter(function(p){return p.entite===e;}), c=bandCounts(ps);
+    var hh=Math.round(avg(ps.map(function(p){return p._h.score;})));
+    var col=hh>=68?"var(--h-ontrack)":hh>=46?"var(--h-risk)":"var(--h-critical)";
+    var segs=[{v:c.ontrack,c:"var(--h-ontrack)",t:"On track"},{v:c.risk,c:"var(--h-risk)",t:"À risque"},
+      {v:c.critical,c:"var(--h-critical)",t:"Critique"},{v:c.blocked,c:"var(--h-blocked)",t:"Bloqué"},
+      {v:c.done,c:"var(--h-done)",t:"Terminé"},{v:c.planned,c:"var(--h-planned)",t:"Non démarré"}];
+    return '<div style="display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--bg3)">'+
+      '<div style="width:96px;flex-shrink:0"><span class="ent-badge">'+h(e)+'</span></div>'+
+      '<div style="width:54px;flex-shrink:0;text-align:center"><span style="font-family:var(--font-head);font-size:20px;font-weight:800;color:'+col+'">'+hh+'</span></div>'+
+      '<div style="flex:1">'+stackBar(segs,14)+'</div>'+
+      '<div style="width:48px;flex-shrink:0;text-align:right;font-size:11px;color:var(--text3);font-weight:700">'+ps.length+' proj.</div></div>';
+  }).join("");
+  return rows;
+}
+
+// ---- SANTÉ AUTO (table + signals) ----
+function viewSante(list){
+  var sorted=list.slice().sort(function(a,b){return a._h.score-b._h.score;});
+  var rows=sorted.map(function(p){
+    var sigs=p._h.signals.slice().sort(function(a,b){return a.w-b.w;}).slice(0,3)
+      .map(function(s){return '<span class="sig '+s.sign+'">'+(s.w>0?"+":"")+s.w+' '+h(s.t)+'</span>';}).join(" ");
+    var fl=p._h.flags.map(function(f){return '<span class="flag">⚑ '+h(f)+'</span>';}).join("");
+    return '<tr class="clk" onclick="openModal('+p.id+')">'+
+      '<td><span class="code">'+h(p.code)+'</span></td>'+
+      '<td style="max-width:230px"><strong>'+h(p.name)+'</strong><div class="tag">'+h(p.entite)+' · '+h(p.type)+'</div>'+(fl?'<div style="margin-top:4px">'+fl+'</div>':'')+'</td>'+
+      '<td>'+divergeTag(p)+'</td>'+
+      '<td>'+bandBadge(p._h.status)+'</td>'+
+      '<td>'+healthBar(p._h.score)+'</td>'+
+      '<td style="max-width:280px">'+sigs+'</td></tr>';
+  }).join("");
+  return '<div class="panel"><div class="panel-hd"><div><h3>🩺 Statut auto-détecté vs déclaré</h3>'+
+    '<div class="sub">Le moteur recalcule le statut à partir de 6 signaux pondérés. ▼ = dégradé vs déclaré, ▲ = amélioré, ⚑ = anomalie de données.</div></div></div>'+
+    '<table class="tbl"><thead><tr><th>Code</th><th>Projet</th><th>Δ déclaré</th><th>Santé auto</th><th>Indice</th><th>Principaux signaux</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="note"><b>Lecture :</b> un écart « ▼ » signale un projet affiché plus favorablement qu\'il ne l\'est réellement (optimisme de reporting). Cliquez une ligne pour le détail complet des signaux.</div></div>';
+}
+
+// ---- STATISTIQUES ----
+function viewStats(list){
+  // RAG distribution
+  var rag={Rouge:0,Orange:0,Gris:0,"—":0};
+  list.forEach(function(p){var s=p.scoring||"—"; rag[s]=(rag[s]||0)+1;});
+  var ragRows=hbars([
+    {nm:"Rouge",v:rag.Rouge||0,c:"var(--red)"},{nm:"Orange",v:rag.Orange||0,c:"var(--orange)"},
+    {nm:"Gris / N.D.",v:(rag.Gris||0)+(rag["—"]||0),c:"var(--text3)"}],{});
+
+  // trend momentum
+  var tr={amel:0,degr:0,stable:0,bloq:0,na:0};
+  list.forEach(function(p){var t=p.tendance||"";
+    if(/Amélior/i.test(t))tr.amel++;else if(/Dégrad/i.test(t))tr.degr++;else if(/Bloqué/i.test(t))tr.bloq++;else if(/Stable/i.test(t))tr.stable++;else tr.na++;});
+  var momentum=tr.amel-tr.degr-tr.bloq;
+  var trendRows=hbars([
+    {nm:"↗ Amélioration",v:tr.amel,c:"var(--green)"},{nm:"→ Stable",v:tr.stable,c:"var(--teal)"},
+    {nm:"↘ Dégradation",v:tr.degr,c:"var(--orange)"},{nm:"⚠ Bloqué",v:tr.bloq,c:"var(--purple)"},
+    {nm:"— N/A",v:tr.na,c:"var(--text3)"}],{});
+
+  // delay distribution
+  var dl={"À l'heure":0,"Indéterminé":0,"Qq mois":0,"≥4 mois":0,"Récurrent":0};
+  list.forEach(function(p){var r=(p.retard||"").toLowerCase();
+    if(/récurrent/.test(r))dl["Récurrent"]++;else if(/(4|5|6|7|8|9|1\d)\s*mois|an\b/.test(r))dl["≥4 mois"]++;
+    else if(/mois/.test(r))dl["Qq mois"]++;else if(/déterminer/.test(r))dl["Indéterminé"]++;else dl["À l'heure"]++;});
+  var delayRows=hbars([
+    {nm:"À l'heure",v:dl["À l'heure"],c:"var(--green)"},{nm:"Qq mois",v:dl["Qq mois"],c:"var(--orange)"},
+    {nm:"≥4 mois",v:dl["≥4 mois"],c:"var(--red)"},{nm:"Récurrent",v:dl["Récurrent"],c:"var(--red)"},
+    {nm:"Indéterminé",v:dl["Indéterminé"],c:"var(--text3)"}],{});
+
+  // completion by entity
+  var ents=uniq(list.map(function(p){return p.entite;})).sort();
+  var compRows=hbars(ents.map(function(e){
+    var ps=list.filter(function(p){return p.entite===e;});
+    return {nm:e,v:Math.round(avg(ps.map(function(p){return p.progress;}))),c:"var(--teal)"};
+  }).sort(function(a,b){return b.v-a.v;}),{max:100,fmt:function(v){return v+"%";}});
+
+  // blocker leaderboard (by entity)
+  var blkRows=hbars(ents.map(function(e){
+    var ps=list.filter(function(p){return p.entite===e;});
+    return {nm:e,v:ps.reduce(function(s,p){return s+p._h.blockers;},0),c:"var(--purple)"};
+  }).filter(function(r){return r.v>0;}).sort(function(a,b){return b.v-a.v;}),{});
+
+  // heatmap entity x risk type (avg health)
+  var types=uniq(list.map(function(p){return p.type;})).sort();
+  var heat='<table class="heat"><thead><tr><th></th>'+types.map(function(t){return '<th>'+h(t.replace("Risque ","").replace(" / Durabilité",""))+'</th>';}).join("")+'</tr></thead><tbody>';
+  ents.forEach(function(e){
+    heat+='<tr><td class="rowh">'+h(e)+'</td>';
+    types.forEach(function(t){
+      var ps=list.filter(function(p){return p.entite===e&&p.type===t;});
+      if(!ps.length){heat+='<td class="cell empty">·</td>';return;}
+      var hh=Math.round(avg(ps.map(function(p){return p._h.score;})));
+      var col=hh>=68?"var(--h-ontrack)":hh>=55?"#5BB37F":hh>=46?"var(--h-risk)":hh>=35?"var(--orange)":"var(--h-critical)";
+      heat+='<td class="cell" style="background:'+col+'">'+hh+'<small>'+ps.length+' proj.</small></td>';
+    });
+    heat+='</tr>';
+  });
+  heat+='</tbody></table>';
+
+  var stat=function(label,val,sub,col){return '<div style="text-align:center;padding:6px 10px"><div style="font-family:var(--font-head);font-size:26px;font-weight:800;color:'+(col||"var(--navy)")+'">'+val+'</div><div style="font-size:10.5px;color:var(--text3);font-weight:700;margin-top:3px">'+label+'</div>'+(sub?'<div style="font-size:9.5px;color:var(--text3);margin-top:1px">'+sub+'</div>':'')+'</div>';};
+  var progs=list.map(function(p){return p.progress;}).sort(function(a,b){return a-b;});
+  var median=progs.length?progs[Math.floor(progs.length/2)]:0;
+  var headline='<div class="panel" style="margin-bottom:16px"><div style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:8px">'+
+    stat("Santé moyenne",Math.round(avg(list.map(function(p){return p._h.score;}))),"/100","var(--teal)")+
+    stat("Avancement médian",median+"%","",null)+
+    stat("Momentum","("+(momentum>=0?"+":"")+momentum+")",tr.amel+" amél / "+(tr.degr+tr.bloq)+" dégr",momentum>=0?"var(--green)":"var(--red)")+
+    stat("Bloqueurs ouverts",list.reduce(function(s,p){return s+p._h.blockers;},0),"sur "+list.filter(function(p){return p._h.blockers;}).length+" projets","var(--purple)")+
+    stat("Hors délai",list.filter(function(p){return p._h.overdueM>0;}).length,"échéance dépassée","var(--orange)")+
+    '</div></div>';
+
+  return headline+
+    '<div class="grid g-2" style="margin-bottom:16px">'+
+      '<div class="panel"><h3>🌡️ Heatmap santé — Entité × Risque</h3><div class="sub">Santé moyenne auto par croisement (vert = sain, rouge = tendu)</div>'+heat+'</div>'+
+      '<div class="panel"><h3>📈 Avancement moyen par entité</h3><div class="sub">% de progression déclarée</div>'+compRows+'</div>'+
+    '</div>'+
+    '<div class="grid g-2" style="margin-bottom:16px">'+
+      '<div class="panel"><h3>🔄 Momentum (tendances)</h3><div class="sub">Solde net = amélioration − (dégradation + blocage) = <b style="color:'+(momentum>=0?"var(--green)":"var(--red)")+'">'+(momentum>=0?"+":"")+momentum+'</b></div>'+trendRows+'</div>'+
+      '<div class="panel"><h3>🚦 Score RAG déclaré</h3><div class="sub">Répartition des scorings saisis</div>'+ragRows+'</div>'+
+    '</div>'+
+    '<div class="grid g-2">'+
+      '<div class="panel"><h3>⏱️ Distribution des retards</h3><div class="sub">Issu du champ « retard » (texte libre, normalisé)</div>'+delayRows+'</div>'+
+      '<div class="panel"><h3>🧱 Bloqueurs par entité</h3><div class="sub">Nombre total de bloqueurs ouverts</div>'+(blkRows||'<div class="muted" style="padding:20px;text-align:center">Aucun bloqueur 🎉</div>')+'</div>'+
+    '</div>';
+}
+
+// ---- ATTENTION ----
+function viewAttention(list){
+  var ranked=list.filter(function(p){return p._h.status!=="done"&&p._h.status!=="planned";})
+    .sort(function(a,b){return b._h.priority-a._h.priority;});
+  var rows=ranked.map(function(p,i){
+    var reasons=p._h.signals.filter(function(s){return s.w<0;}).sort(function(a,b){return a.w-b.w;}).slice(0,3)
+      .map(function(s){return h(s.t);}).join(" · ");
+    return '<tr class="clk" onclick="openModal('+p.id+')">'+
+      '<td style="text-align:center;font-weight:800;color:var(--text3)">'+(i+1)+'</td>'+
+      '<td><span class="code">'+h(p.code)+'</span></td>'+
+      '<td style="max-width:260px"><strong>'+h(p.name)+'</strong><div class="tag">'+h(p.entite)+' · '+h(p.type)+'</div></td>'+
+      '<td>'+bandBadge(p._h.status)+'</td>'+
+      '<td>'+healthBar(p._h.score)+'</td>'+
+      '<td style="font-size:10.5px;color:var(--text2);max-width:300px">'+reasons+'</td>'+
+      '<td style="text-align:right"><span class="badge b-critical" style="font-size:12px">'+p._h.priority+'</span></td></tr>';
+  }).join("");
+  return '<div class="panel"><div class="panel-hd"><div><h3>🔥 File de priorité — projets sous tension</h3>'+
+    '<div class="sub">Triés par indice de priorité décroissant. Terminés et non démarrés exclus.</div></div></div>'+
+    '<table class="tbl"><thead><tr><th>#</th><th>Code</th><th>Projet</th><th>Santé</th><th>Indice</th><th>Facteurs aggravants</th><th style="text-align:right">Priorité</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="7" class="muted" style="text-align:center;padding:24px">Aucun projet sous tension 🎉</td></tr>')+'</tbody></table></div>';
+}
+
+// ---- QUALITÉ DONNÉES ----
+function viewQualite(list){
+  var flagged=list.filter(function(p){return p._h.flags.length;});
+  var allFlags={};
+  flagged.forEach(function(p){p._h.flags.forEach(function(f){allFlags[f]=(allFlags[f]||0)+1;});});
+  var qScore=Math.round((1-flagged.length/(list.length||1))*100);
+  var flagRows=hbars(Object.keys(allFlags).map(function(k){return {nm:k,v:allFlags[k],c:"var(--orange)"};})
+    .sort(function(a,b){return b.v-a.v;}),{});
+  var rows=flagged.sort(function(a,b){return b._h.flags.length-a._h.flags.length;}).map(function(p){
+    return '<tr class="clk" onclick="openModal('+p.id+')"><td><span class="code">'+h(p.code)+'</span></td>'+
+      '<td><strong>'+h(p.name)+'</strong><div class="tag">'+h(p.entite)+'</div></td>'+
+      '<td>'+p._h.flags.map(function(f){return '<span class="flag">⚑ '+h(f)+'</span>';}).join("")+'</td></tr>';
+  }).join("");
+  return '<div class="grid g-3" style="margin-bottom:16px">'+
+    '<div class="panel"><h3>⚠️ Anomalies par type</h3><div class="sub">Contradictions détectées dans les données saisies</div>'+(flagRows||'<div class="muted">Aucune anomalie 🎉</div>')+'</div>'+
+    '<div class="panel" style="display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+      '<h3 style="align-self:flex-start">🎯 Score qualité</h3>'+gauge(qScore,180)+
+      '<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:6px">'+flagged.length+' projet(s) avec au moins une anomalie<br>sur '+list.length+'</div></div>'+
+    '</div>'+
+    '<div class="panel"><div class="panel-hd"><div><h3>📋 Détail des projets à corriger</h3><div class="sub">Cliquez pour ouvrir la fiche</div></div></div>'+
+    '<table class="tbl"><thead><tr><th>Code</th><th>Projet</th><th>Anomalies détectées</th></tr></thead><tbody>'+
+    (rows||'<tr><td colspan="3" class="muted" style="text-align:center;padding:24px">Données cohérentes 🎉</td></tr>')+'</tbody></table>'+
+    '<div class="note"><b>Pourquoi c\'est important :</b> ces incohérences (ex. « 100 % terminé » mais « non initié », ou date de révision non datée) faussent tout reporting agrégé. Le moteur de santé les neutralise mais elles doivent être corrigées à la source.</div></div>';
+}
+
+// ---- PROJETS ----
+function viewProjets(list){
+  var sorted=list.slice().sort(function(a,b){return a.code.localeCompare(b.code)||a.entite.localeCompare(b.entite);});
+  var rows=sorted.map(function(p){
+    var col=p.progress>=100?"var(--green)":p.progress>=50?"var(--teal)":"var(--orange)";
+    return '<tr class="clk" onclick="openModal('+p.id+')">'+
+      '<td><span class="code">'+h(p.code)+'</span></td>'+
+      '<td style="max-width:240px"><strong>'+h(p.name)+'</strong><div class="tag">'+h(p.type)+'</div></td>'+
+      '<td><span class="ent-badge">'+h(p.entite)+'</span></td>'+
+      '<td><span class="mini-prog"><i style="width:'+p.progress+'%;background:'+col+'"></i></span><b>'+p.progress+'%</b></td>'+
+      '<td>'+bandBadge(p._h.status)+'</td>'+
+      '<td>'+healthBar(p._h.score)+'</td>'+
+      '<td>'+divergeTag(p)+'</td></tr>';
+  }).join("");
+  return '<div class="panel"><div class="panel-hd"><div><h3>📋 Portefeuille complet</h3><div class="sub">'+sorted.length+' projets · statut auto-calculé · cliquez pour le détail</div></div></div>'+
+    '<table class="tbl"><thead><tr><th>Code</th><th>Projet</th><th>Entité</th><th>Avancement</th><th>Santé auto</th><th>Indice</th><th>Δ déclaré</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+// ════════════════════════════════════════════════════════
+//  MODAL (fiche projet + explication santé)
+// ════════════════════════════════════════════════════════
+function openModal(id){
+  var p=PROJECTS.find(function(x){return x.id===id;}); if(!p)return;
+  var H=p._h;
+  var sigs=H.signals.slice().sort(function(a,b){return a.w-b.w;})
+    .map(function(s){return '<span class="sig '+s.sign+'">'+(s.w>0?"+":"")+s.w+' · '+h(s.t)+'</span>';}).join(" ");
+  var flags=H.flags.length?H.flags.map(function(f){return '<span class="flag">⚑ '+h(f)+'</span>';}).join(" "):'<span class="muted">aucune</span>';
+  var blk=(p.blockers&&p.blockers.length)?p.blockers.map(function(b){return '<div class="mb-li">'+h(b)+'</div>';}).join(""):'<div class="muted" style="font-size:12px">Aucun bloqueur</div>';
+  var dec=(p.decisions&&p.decisions.length)?p.decisions.map(function(b){return '<div class="mb-li">'+h(b)+'</div>';}).join(""):'<div class="muted" style="font-size:12px">—</div>';
+  var imp=(p.impacts&&p.impacts.length)?p.impacts.map(function(b){return '<div class="mb-li">'+h(b)+'</div>';}).join(""):'<div class="muted" style="font-size:12px">—</div>';
+
+  document.getElementById("modal").innerHTML=
+    '<div class="modal-hd"><button class="modal-x" onclick="closeModal()">✕</button>'+
+      '<div class="code">'+h(p.entite)+' · '+h(p.code)+'</div>'+
+      '<h2>'+h(p.name)+'</h2>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+bandBadge(H.status)+divergeTag(p)+
+      '<span class="tag">'+h(p.type)+' · '+h(p.scope||"")+'</span></div></div>'+
+    '<div class="modal-bd">'+
+      '<div class="mb-grid">'+
+        '<div class="mb-box"><div class="k">Santé auto-calculée</div><div class="v" style="display:flex;align-items:center;gap:8px">'+healthBar(H.score)+' / 100</div></div>'+
+        '<div class="mb-box"><div class="k">Indice de priorité</div><div class="v"><b style="color:var(--red)">'+H.priority+'</b> '+(H.overdueM>0?'· hors délai '+H.overdueM+' mois':'')+'</div></div>'+
+        '<div class="mb-box"><div class="k">Avancement</div><div class="v">'+p.progress+'% · '+h(p.tendance||"—")+'</div></div>'+
+        '<div class="mb-box"><div class="k">Échéance / révisée</div><div class="v">'+h(p.dateInitiale||"—")+(p.dateRevisee?' → '+h(p.dateRevisee):'')+'</div></div>'+
+      '</div>'+
+      '<div class="mb-sec"><h4>🧮 Pourquoi ce statut ? — signaux pondérés</h4><div style="line-height:2">'+sigs+'</div></div>'+
+      '<div class="mb-sec"><h4>⚑ Anomalies de données</h4><div style="line-height:2">'+flags+'</div></div>'+
+      (p.description?'<div class="mb-sec"><h4>📄 Description</h4><p>'+h(p.description)+'</p></div>':'')+
+      (p.diagnostic?'<div class="mb-sec"><h4>🔍 Diagnostic</h4><p>'+h(p.diagnostic)+'</p></div>':'')+
+      (p.nextMilestone?'<div class="mb-sec"><h4>🎯 Prochain jalon</h4><p>'+h(p.nextMilestone)+'</p></div>':'')+
+      '<div class="mb-sec"><h4>🧱 Bloqueurs</h4>'+blk+'</div>'+
+      '<div class="mb-sec"><h4>⚡ Impacts</h4>'+imp+'</div>'+
+      '<div class="mb-sec"><h4>✔️ Décisions</h4>'+dec+'</div>'+
+    '</div>';
+  document.getElementById("overlay").classList.add("open");
+}
+function closeModal(){document.getElementById("overlay").classList.remove("open");}
+document.addEventListener("keydown",function(e){if(e.key==="Escape")closeModal();});
+
+// ════════════════════════════════════════════════════════
+//  NAV + EXPORT
+// ════════════════════════════════════════════════════════
+function go(v,el){
+  VIEW=v;
+  document.querySelectorAll(".nav-item").forEach(function(n){n.classList.remove("active");});
+  if(el)el.classList.add("active");
+  render();
+  window.scrollTo(0,0);
+}
+function exportCSV(){
+  var hdr=["code","name","entite","type","progress","declared_status","auto_status","health_score","priority","blockers","overdue_months","flags","top_signals"];
+  var lines=[hdr.join(";")];
+  PROJECTS.forEach(function(p){var H=p._h;
+    var top=H.signals.slice().sort(function(a,b){return a.w-b.w;}).slice(0,3).map(function(s){return s.t+"("+(s.w>0?"+":"")+s.w+")";}).join(" | ");
+    var row=[p.code,p.name,p.entite,p.type,p.progress,BANDS[DECLARED[p.status]||"risk"].lbl,BANDS[H.status].lbl,H.score,H.priority,H.blockers,H.overdueM,H.flags.join(" | "),top]
+      .map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';});
+    lines.push(row.join(";"));
+  });
+  var blob=new Blob(["﻿"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="PMO_sante_auto_"+(new Date().toISOString().slice(0,10))+".csv"; a.click();
+  toast("Export CSV généré — "+PROJECTS.length+" projets");
+}
+function toast(m){var t=document.getElementById("toast");t.textContent=m;t.classList.add("show");setTimeout(function(){t.classList.remove("show");},2600);}
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+function counts(){
+  var c=bandCounts(PROJECTS);
+  document.getElementById("ct-cockpit").textContent=PROJECTS.length;
+  document.getElementById("ct-projets").textContent=PROJECTS.length;
+  document.getElementById("ct-sante").textContent=PROJECTS.length;
+  document.getElementById("ct-attention").textContent=PROJECTS.filter(function(p){return p._h.status!=="done"&&p._h.status!=="planned";}).length;
+  document.getElementById("ct-qualite").textContent=PROJECTS.filter(function(p){return p._h.flags.length;}).length;
+  var ph=Math.round(avg(PROJECTS.map(function(p){return p._h.score;})));
+  document.getElementById("sb-meta").innerHTML="Moteur de santé v1<br>Santé portef. <b style='color:#fff'>"+ph+"/100</b> · "+PROJECTS.length+" projets";
+}
+buildFilters(); counts(); render();
+</script>
+</body></html>
 
